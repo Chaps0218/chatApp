@@ -62,7 +62,6 @@ const ChatApp = () => {
 
     const onError = (error) => {
         console.error('STOMP error:', error);
-        // Aquí puedes manejar el error, mostrar un mensaje al usuario, etc.
     };
 
     const findAndDisplayConnectedUsers = async () => {
@@ -77,10 +76,8 @@ const ChatApp = () => {
         setMessages(prevMessages => [...prevMessages, payload]);
 
         if (selectedUserId === payload.senderId) {
-            // Mostrar el mensaje en el área de chat si el mensaje es para el usuario seleccionado
             setMessages(prevMessages => [...prevMessages, payload]);
         } else {
-            // Actualizar notificaciones de mensajes nuevos si el mensaje es de un usuario no seleccionado
             setConnectedUsers(prevUsers =>
                 prevUsers.map(user => {
                     if (user.nickName === payload.senderId) {
@@ -164,7 +161,6 @@ const ChatApp = () => {
                                         onClick={() => {
                                             setSelectedUserId(user.nickName);
                                             setMessages([]);
-                                            // Opcionalmente, puedes hacer una llamada para obtener mensajes del servidor para el usuario seleccionado
                                         }}
                                     >
                                         <img src='../one2one/img/user_icon.png' alt={user.fullName} />
