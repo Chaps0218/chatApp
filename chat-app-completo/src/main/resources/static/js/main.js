@@ -13,7 +13,7 @@ const addParticipantsForm = document.querySelector('#addParticipantsForm');
 const availableUsersList = document.querySelector('#availableUsersList');
 
 
-const ruta = "http://192.168.4.52:8088";
+const ruta = "http://localhost:8088";
 
 let stompClient = null;
 let nickname = null;

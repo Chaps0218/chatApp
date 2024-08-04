@@ -7,7 +7,7 @@ const messageForm = document.querySelector('#messageForm');
 const messageInput = document.querySelector('#message');
 const chatArea = document.querySelector('#chat-messages');
 const logout = document.querySelector('#logout');
-const ruta = "http://10.40.35.128:8080";
+const ruta = "http://localhost:8080";
 
 let stompClient = null;
 let nickname = null;
