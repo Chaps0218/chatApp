@@ -1,4 +1,3 @@
-// src/components/UserForm.jsx
 import { useState } from 'react';
 
 function UserForm({ onConnect }) {

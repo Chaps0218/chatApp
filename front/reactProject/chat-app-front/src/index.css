@@ -130,28 +130,36 @@ body {
   margin: 0;
 }
 
-.user-item {
+.user-item,
+.room-item,
+.available-user {
   display: flex;
   align-items: center;
   margin-bottom: 8px;
   cursor: pointer;
 }
 
-.user-item.active {
+.user-item.active,
+.room-item.active,
+.available-user.active {
   background-color: #cdebff;
   color: #4f4f4f;
   padding: 10px;
   border-radius: 5px;
 }
 
-.user-item img {
+.user-item img,
+.room-item img,
+.available-user img {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   margin-right: 10px;
 }
 
-.user-item span {
+.user-item span,
+.room-item span,
+.available-user span {
   font-weight: bold;
 }
 
