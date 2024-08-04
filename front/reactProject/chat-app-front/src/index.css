@@ -293,3 +293,21 @@ a.logout {
 .overflow {
   overflow: auto;
 }
+
+/* src/index.css */
+
+.user-item {
+  position: relative;
+  padding: 10px;
+}
+
+.new-message-icon {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: green;
+  border: 2px solid white;
+}

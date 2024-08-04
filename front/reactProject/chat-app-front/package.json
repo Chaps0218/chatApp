@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@stomp/stompjs": "^7.0.0",
+    "chat-app-front": "file:",
     "global": "^4.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,6 +27,6 @@
     "eslint-plugin-react": "^7.34.3",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.7",
-    "vite": "^5.3.4"
+    "vite": "^5.3.5"
   }
 }

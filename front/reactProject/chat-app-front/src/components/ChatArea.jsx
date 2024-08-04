@@ -1,9 +1,8 @@
-/* eslint-disable react/prop-types */
 // src/components/ChatArea.jsx
-import { useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef } from 'react';
 
 function ChatArea({ messages, onSendMessage, currentUser, selectedUser }) {
-  const [messageInput, setMessageInput] = useState("");
+  const [messageInput, setMessageInput] = useState('');
   const chatAreaRef = useRef(null);
 
   useEffect(() => {
@@ -16,7 +15,7 @@ function ChatArea({ messages, onSendMessage, currentUser, selectedUser }) {
     event.preventDefault();
     if (messageInput.trim() && selectedUser) {
       onSendMessage(messageInput.trim());
-      setMessageInput("");
+      setMessageInput('');
     }
   };
 
@@ -24,18 +23,13 @@ function ChatArea({ messages, onSendMessage, currentUser, selectedUser }) {
     <div className="chat-area">
       <div className="chat-area" id="chat-messages" ref={chatAreaRef}>
         {messages.map((msg, index) => (
-          <div
-            key={msg.id || index}
-            className={`message ${
-              msg.senderId === currentUser.nickname ? "sender" : "receiver"
-            }`}
-          >
+          <div key={msg.id || index} className={`message ${msg.senderId === currentUser.nickname ? 'sender' : 'receiver'}`}>
             <p>{msg.content}</p>
           </div>
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className={selectedUser ? "" : "hidden"}>
+      <form onSubmit={handleSubmit} className={selectedUser ? '' : 'hidden'}>
         <div className="message-input">
           <input
             type="text"
@@ -52,3 +46,4 @@ function ChatArea({ messages, onSendMessage, currentUser, selectedUser }) {
 }
 
 export default ChatArea;
+//version

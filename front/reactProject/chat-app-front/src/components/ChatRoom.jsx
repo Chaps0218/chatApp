@@ -1,11 +1,11 @@
 // src/components/ChatRoom.jsx
-import { useState } from "react";
-import { useChat } from "../hooks/useChat";
-import ChatArea from "./ChatArea";
-import UsersList from "./UsersList";
+import { useState } from 'react';
+import { useChat } from '../hooks/useChat';
+import UsersList from './UsersList';
+import ChatArea from './ChatArea';
 
 function ChatRoom({ user, onLogout }) {
-  const { connectedUsers, messages, sendMessage, selectUser } = useChat(user);
+  const { connectedUsers, messages, sendMessage, selectUser, unreadMessages } = useChat(user);
   const [selectedUser, setSelectedUser] = useState(null);
 
   const handleSelectUser = (user) => {
@@ -20,6 +20,7 @@ function ChatRoom({ user, onLogout }) {
         onSelectUser={handleSelectUser}
         currentUser={user}
         onLogout={onLogout}
+        unreadMessages={unreadMessages}
       />
       <ChatArea
         messages={messages}

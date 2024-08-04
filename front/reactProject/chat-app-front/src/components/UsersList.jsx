@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../hooks/useChat';
 
-function UsersList({ users, onSelectUser, currentUser, onLogout }) {
+function UsersList({ users, onSelectUser, currentUser, onLogout, unreadMessages }) {
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const { logout } = useChat(currentUser);
+    const { logout, selectUser } = useChat(currentUser);
 
     useEffect(() => {
         if (users.length > 0 && !selectedUserId) {
@@ -16,6 +16,7 @@ function UsersList({ users, onSelectUser, currentUser, onLogout }) {
     const handleUserClick = (user) => {
         setSelectedUserId(user.nickName);
         onSelectUser(user);
+        selectUser(user.nickName); // Trigger user selection in the hook
     };
 
     function salir() {
@@ -36,7 +37,9 @@ function UsersList({ users, onSelectUser, currentUser, onLogout }) {
                         >
                             <img src="./user_icon.png" alt={user.fullName} />
                             <span>{user.fullName}</span>
-                            <span className="nbr-msg hidden">0</span>
+                            {unreadMessages[user.nickName] && (
+                                <span className="new-message-icon"></span>
+                            )}
                         </li>
                     ))}
                 </ul>
