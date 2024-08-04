@@ -12,6 +12,9 @@ const createRoomForm = document.querySelector('#createRoomForm');
 const addParticipantsForm = document.querySelector('#addParticipantsForm');
 const availableUsersList = document.querySelector('#availableUsersList');
 
+const createRoomLink = document.querySelector('#createRoom');
+const createRoomSection = document.querySelector('#createRoomSection');
+
 
 const ruta = "http://localhost:8088";
 
@@ -22,6 +25,8 @@ let selectedUserId = null;
 let selectedRoomId = null;
 
 function connect(event) {
+  usernamePage.classList.add('hidden');
+  chatPage.classList.remove('hidden');
   nickname = document.querySelector('#nickname').value.trim();
   fullname = document.querySelector('#fullname').value.trim();
 
@@ -312,9 +317,17 @@ function onLogout() {
   window.location.reload();
 }
 
+function createGroup() {
+  createRoomSection.classList.remove('hidden');
+  chatArea.classList.add('hidden');
+}
+
 usernameForm.addEventListener('submit', connect, true);
 messageForm.addEventListener('submit', sendMessage, true);
 createRoomForm.addEventListener('submit', createRoom, true);
 addParticipantsForm.addEventListener('submit', addParticipants, true);
 logout.addEventListener('click', onLogout, true);
+createRoomLink.addEventListener('click', createGroup);
+
+
 window.onbeforeunload = () => onLogout();
