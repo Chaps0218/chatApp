@@ -1,9 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import UserForm from './components/UserForm';
 import ChatRoom from './components/ChatRoom';
 
 function App() {
   const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setUser(null);
+  };
+
 
   return (
     <div>
@@ -11,7 +24,7 @@ function App() {
       {!user ? (
         <UserForm onConnect={setUser} />
       ) : (
-        <ChatRoom user={user} onLogout={() => setUser(null)} />
+        <ChatRoom user={user} onLogout={handleLogout} />
       )}
     </div>
   );

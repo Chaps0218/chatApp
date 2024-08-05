@@ -7,7 +7,9 @@ function UserForm({ onConnect }) {
     const handleSubmit = (event) => {
         event.preventDefault();
         if (nickname.trim() && fullname.trim()) {
-            onConnect({ nickname: nickname.trim(), fullname: fullname.trim() });
+            const user = { nickname: nickname.trim(), fullname: fullname.trim() };
+            localStorage.setItem('user', JSON.stringify(user)); // Save user in localStorage
+            onConnect(user);
         }
     };
 

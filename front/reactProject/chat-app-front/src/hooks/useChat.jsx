@@ -227,13 +227,26 @@ export function useChat(user) {
     const addParticipants = useCallback(
         (roomId, participants) => {
             if (stompClient) {
-                participants.forEach((userId) => {
-                    stompClient.send(
-                        `/app/group/${roomId}/${userId}`,
-                        {},
-                        JSON.stringify({})
-                    );
+                let room = null;
+                rooms.forEach((r) => {
+                    console.log("r", r);
+                    if (r.roomId === roomId) {
+                        room = r;
+                    }
                 });
+                if (room != null) {
+                    let inRoom = room.participants;
+                    let newParticipants = participants.filter((p) => !inRoom.includes(p));
+                    if (newParticipants.length > 0) {
+                        participants.forEach(userId => {
+                            stompClient.send(
+                                `/app/group/${roomId}/${userId}`,
+                                {},
+                                JSON.stringify({})
+                            );
+                        });
+                    }
+                }
             }
         },
         [stompClient]
