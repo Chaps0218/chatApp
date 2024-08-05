@@ -60,7 +60,7 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
     return (
         <div className="users-list">
             <div className="users-list-container">
-                <h2>Online Users</h2>
+                <h2>Usuarios Conectados</h2>
                 <ul id="connectedUsers">
                     {users.map((user) => (
                         <li
@@ -77,7 +77,7 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
                     ))}
                 </ul>
 
-                <h2>Rooms</h2>
+                <h2>Salas</h2>
                 <ul id="roomsList">
                     {rooms.map((room) => (
                         <li
@@ -132,9 +132,9 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
                     </form>
                 )}
             </div>
-            <div>
-                <p id="connected-user-fullname">{currentUser.fullname}</p>
-                <a className="logout" href="#" onClick={salir}>Logout</a>
+            <div className='logoutBox'>
+                <h2 id="connected-user-fullname">{currentUser.fullname}</h2>
+                <button className="logout" onClick={salir}>Logout</button>
             </div>
         </div>
     );
