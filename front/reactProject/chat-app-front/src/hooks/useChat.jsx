@@ -1,253 +1,273 @@
-// src/hooks/useChat.js
-
 import { Stomp } from "@stomp/stompjs";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import SockJS from "sockjs-client";
 
 const SOCKET_URL = "http://localhost:8080/chat-websocket";
 
 export function useChat(user) {
-  const [stompClient, setStompClient] = useState(null);
-  const [connectedUsers, setConnectedUsers] = useState([]);
-  const [rooms, setRooms] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [selectedRoomId, setSelectedRoomId] = useState(null);
-  const [messages, setMessages] = useState({});
-  const [unreadMessages, setUnreadMessages] = useState({});
+    const [stompClient, setStompClient] = useState(null);
+    const [connectedUsers, setConnectedUsers] = useState([]);
+    const [rooms, setRooms] = useState([]);
+    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [selectedRoomId, setSelectedRoomId] = useState(null);
+    const [messages, setMessages] = useState({});
+    const [unreadMessages, setUnreadMessages] = useState({});
+    const subscribedRooms = useRef(new Set());
+    const processedMessages = useRef(new Set());
 
-  useEffect(() => {
-    if (user) {
-      const socket = new SockJS(SOCKET_URL);
-      const client = Stomp.over(socket);
+    useEffect(() => {
+        if (user) {
+            const socket = new SockJS(SOCKET_URL);
+            const client = Stomp.over(socket);
 
-      client.connect(
-        {},
-        () => {
-          setStompClient(client);
+            client.connect(
+                {},
+                () => {
+                    setStompClient(client);
 
-          client.subscribe(
-            `/user/${user.nickname}/queue/messages`,
-            onMessageReceived
-          );
-          client.subscribe("/user/public", onMessageReceived);
-          client.subscribe(`/user/${user.nickname}/queue/rooms`, onRoomUpdated);
-          client.subscribe(`/topic/rooms/${user.nickname}`, onRoomUpdated);
-          rooms.forEach((room) => {
-            client.subscribe(`/topic/rooms/${room.roomId}`, onMessageReceived);
-          });
-          client.send(
-            "/app/user.addUser",
-            {},
-            JSON.stringify({
-              nickName: user.nickname,
-              fullName: user.fullname,
-              status: "ONLINE",
-            })
-          );
+                    client.subscribe(
+                        `/user/${user.nickname}/queue/messages`,
+                        onMessageReceived
+                    );
+                    client.subscribe("/user/public", onMessageReceived);
+                    client.subscribe(`/user/${user.nickname}/queue/rooms`, onRoomUpdated);
+                    client.subscribe(`/topic/rooms/${user.nickname}`, onRoomUpdated);
 
-          fetchConnectedUsers();
-          fetchUserRooms();
-        },
-        onError
-      );
-    }
+                    client.send(
+                        "/app/user.addUser",
+                        {},
+                        JSON.stringify({
+                            nickName: user.nickname,
+                            fullName: user.fullname,
+                            status: "ONLINE",
+                        })
+                    );
 
-    return () => {
-      if (stompClient) {
-        stompClient.disconnect();
-      }
-    };
-  }, [user]);
+                    fetchConnectedUsers();
+                    fetchUserRooms();
+                },
+                onError
+            );
+        }
 
-  const fetchConnectedUsers = useCallback(async () => {
-    const response = await fetch("http://localhost:8080/users");
-    const users = await response.json();
-    setConnectedUsers(users.filter((u) => u.nickName !== user.nickname));
-  }, [user]);
+        return () => {
+            if (stompClient) {
+                stompClient.disconnect();
+            }
+        };
+    }, [user]);
 
-  const fetchUserRooms = useCallback(async () => {
-    const response = await fetch(
-      `http://localhost:8080/user/${user.nickname}/rooms`
-    );
-    const userRooms = await response.json();
-    setRooms(userRooms);
-  }, [user.nickname]);
+    useEffect(() => {
+        if (stompClient && rooms.length > 0) {
+            rooms.forEach((room) => {
+                if (!subscribedRooms.current.has(room.roomId)) {
+                    stompClient.subscribe(`/topic/rooms/${room.roomId}`, onMessageReceived);
+                    subscribedRooms.current.add(room.roomId);
+                }
+            });
+        }
+    }, [stompClient, rooms]);
 
-  const fetchMessagesForUser = useCallback(
-    async (userId) => {
-      if (userId) {
+    const fetchConnectedUsers = useCallback(async () => {
+        const response = await fetch("http://localhost:8080/users");
+        const users = await response.json();
+        setConnectedUsers(users.filter((u) => u.nickName !== user.nickname));
+    }, [user]);
+
+    const fetchUserRooms = useCallback(async () => {
         const response = await fetch(
-          `http://localhost:8080/messages/${user.nickname}/${userId}`
+            `http://localhost:8080/user/${user.nickname}/rooms`
         );
-        const fetchedMessages = await response.json();
-        setMessages((prev) => ({ ...prev, [userId]: fetchedMessages }));
-        setUnreadMessages((prev) => ({ ...prev, [userId]: 0 }));
-      }
-    },
-    [user.nickname]
-  );
+        const userRooms = await response.json();
+        setRooms(userRooms);
+    }, [user.nickname]);
 
-  const fetchMessagesForRoom = useCallback(async (roomId) => {
-    if (roomId) {
-      const response = await fetch(
-        `http://localhost:8080/messages/rooms/${roomId}`
-      );
-      const fetchedMessages = await response.json();
-      setMessages((prev) => ({ ...prev, [roomId]: fetchedMessages }));
-    }
-  }, []);
+    const fetchMessagesForUser = useCallback(
+        async (userId) => {
+            if (userId) {
+                const response = await fetch(
+                    `http://localhost:8080/messages/${user.nickname}/${userId}`
+                );
+                const fetchedMessages = await response.json();
+                setMessages((prev) => ({ ...prev, [userId]: fetchedMessages }));
+                setUnreadMessages((prev) => ({ ...prev, [userId]: 0 }));
 
-  const selectUser = useCallback(
-    (userId) => {
-      setSelectedUserId(userId);
-      setSelectedRoomId(null);
-      fetchMessagesForUser(userId);
-      setUnreadMessages((prev) => ({ ...prev, [userId]: 0 }));
-    },
-    [fetchMessagesForUser]
-  );
+                // Add fetched messages to processedMessages set
+                fetchedMessages.forEach(msg => {
+                    const messageId = `${msg.senderId}-${msg.content}-${msg.timestamp}`;
+                    processedMessages.current.add(messageId);
+                });
+            }
+        },
+        [user.nickname]
+    );
 
-  const selectRoom = useCallback(
-    (roomId) => {
-      setSelectedRoomId(roomId);
-      setSelectedUserId(null);
-      fetchMessagesForRoom(roomId);
-    },
-    [fetchMessagesForRoom]
-  );
+    const fetchMessagesForRoom = useCallback(async (roomId) => {
+        if (roomId) {
+            const response = await fetch(
+                `http://localhost:8080/messages/rooms/${roomId}`
+            );
+            const fetchedMessages = await response.json();
+            setMessages((prev) => ({ ...prev, [roomId]: fetchedMessages }));
 
-  const sendMessage = useCallback(
-    (content) => {
-      if (stompClient && (selectedUserId || selectedRoomId)) {
-        const chatMessage = {
-          senderId: user.nickname,
-          content: content,
-          timestamp: new Date().toISOString(),
-        };
-
-        if (selectedUserId) {
-          chatMessage.recipientId = selectedUserId;
-          stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
-        } else if (selectedRoomId) {
-          stompClient.send(
-            `/app/messages/rooms/${selectedRoomId}`,
-            {},
-            JSON.stringify(chatMessage)
-          );
+            // Add fetched messages to processedMessages set
+            fetchedMessages.forEach(msg => {
+                const messageId = `${msg.senderId}-${msg.content}-${msg.timestamp}`;
+                processedMessages.current.add(messageId);
+            });
         }
+    }, []);
 
-        setMessages((prev) => {
-          const chatId = selectedUserId || selectedRoomId;
-          return {
-            ...prev,
-            [chatId]: [...(prev[chatId] || []), chatMessage],
-          };
-        });
-      }
-    },
-    [stompClient, selectedUserId, selectedRoomId, user.nickname]
-  );
+    const selectUser = useCallback(
+        (userId) => {
+            setSelectedUserId(userId);
+            setSelectedRoomId(null);
+            fetchMessagesForUser(userId);
+            setUnreadMessages((prev) => ({ ...prev, [userId]: 0 }));
+        },
+        [fetchMessagesForUser]
+    );
 
-  const onMessageReceived = useCallback(
-    (payload) => {
-      const message = JSON.parse(payload.body);
-      console.log("Received message:", message);
-      const chatId =
-        message.roomId ||
-        (message.senderId === user.nickname
-          ? message.recipientId
-          : message.senderId);
+    const selectRoom = useCallback(
+        (roomId) => {
+            setSelectedRoomId(roomId);
+            setSelectedUserId(null);
+            fetchMessagesForRoom(roomId);
+        },
+        [fetchMessagesForRoom]
+    );
 
-      setMessages((prev) => {
-        const chatMessages = prev[chatId] || [];
+    const onMessageReceived = useCallback(
+        (payload) => {
+            const message = JSON.parse(payload.body);
+            console.log("Received message:", message);
+            const chatId = message.roomId || (message.senderId === user.nickname ? message.recipientId : message.senderId);
 
-        const messageExists = chatMessages.some(
-          (m) =>
-            m.senderId === message.senderId &&
-            m.content === message.content &&
-            m.timestamp === message.timestamp
-        );
+            // Create a unique identifier for the message
+            const messageId = `${message.senderId}-${message.content}-${message.timestamp}`;
 
-        if (!messageExists) {
-          return {
-            ...prev,
-            [chatId]: [...chatMessages, message],
-          };
+            // Only process the message if we haven't seen it before
+            if (!processedMessages.current.has(messageId)) {
+                processedMessages.current.add(messageId);
+
+                setMessages((prev) => {
+                    const chatMessages = prev[chatId] || [];
+                    return {
+                        ...prev,
+                        [chatId]: [...chatMessages, message],
+                    };
+                });
+
+                if (chatId !== selectedUserId && chatId !== selectedRoomId) {
+                    setUnreadMessages((prev) => ({
+                        ...prev,
+                        [chatId]: (prev[chatId] || 0) + 1,
+                    }));
+                }
+            }
+            fetchConnectedUsers();
+        },
+        [user.nickname, selectedUserId, selectedRoomId, fetchConnectedUsers]
+    );
+
+    const sendMessage = useCallback(
+        (content) => {
+            if (stompClient && (selectedUserId || selectedRoomId)) {
+                const chatMessage = {
+                    senderId: user.nickname,
+                    content: content,
+                    timestamp: new Date().toISOString(),
+                };
+
+                if (selectedUserId) {
+                    chatMessage.recipientId = selectedUserId;
+                    stompClient.send("/app/chat", {}, JSON.stringify(chatMessage));
+
+                    // Immediately update the messages state for one-to-one chats
+                    setMessages((prev) => {
+                        const chatMessages = prev[selectedUserId] || [];
+                        return {
+                            ...prev,
+                            [selectedUserId]: [...chatMessages, chatMessage],
+                        };
+                    });
+                } else if (selectedRoomId) {
+                    stompClient.send(
+                        `/app/messages/rooms/${selectedRoomId}`,
+                        {},
+                        JSON.stringify(chatMessage)
+                    );
+                    // For rooms, we'll let the server echo back the message
+                }
+            }
+        },
+        [stompClient, selectedUserId, selectedRoomId, user.nickname]
+    );
+
+
+    const onRoomUpdated = useCallback(() => {
+        fetchUserRooms();
+    }, [fetchUserRooms]);
+
+    const createRoom = useCallback(
+        (roomId) => {
+            if (stompClient) {
+                if (!rooms.some((r) => r.roomId === roomId)) {
+                    const roomData = {
+                        roomId: roomId,
+                        creatorId: user.nickname,
+                    };
+                    stompClient.send("/app/group/create", {}, JSON.stringify(roomData));
+                }
+            }
+        },
+        [stompClient, user.nickname]
+    );
+
+    const addParticipants = useCallback(
+        (roomId, participants) => {
+            if (stompClient) {
+                participants.forEach((userId) => {
+                    stompClient.send(
+                        `/app/group/${roomId}/${userId}`,
+                        {},
+                        JSON.stringify({})
+                    );
+                });
+            }
+        },
+        [stompClient]
+    );
+
+    const onError = useCallback((error) => {
+        console.error("WebSocket error:", error);
+    }, []);
+
+    const logout = useCallback(() => {
+        if (stompClient) {
+            stompClient.send(
+                "/app/user.disconnectUser",
+                {},
+                JSON.stringify({
+                    nickName: user.nickname,
+                    fullName: user.fullname,
+                    status: "OFFLINE",
+                })
+            );
+            stompClient.disconnect();
         }
-        return prev;
-      });
+    }, [stompClient, user]);
 
-      setUnreadMessages((prev) => ({
-        ...prev,
-        [chatId]: (prev[chatId] || 0) + 1,
-      }));
-
-      fetchConnectedUsers();
-    },
-    [fetchConnectedUsers, user.nickname]
-  );
-
-  const onRoomUpdated = useCallback(() => {
-    fetchUserRooms();
-  }, [fetchUserRooms]);
-
-  const createRoom = useCallback(
-    (roomId) => {
-      if (stompClient) {
-        const roomData = {
-          roomId: roomId,
-          creatorId: user.nickname,
-        };
-        stompClient.send("/app/group/create", {}, JSON.stringify(roomData));
-      }
-    },
-    [stompClient, user.nickname]
-  );
-
-  const addParticipants = useCallback(
-    (roomId, participants) => {
-      if (stompClient) {
-        participants.forEach((userId) => {
-          stompClient.send(
-            `/app/group/${roomId}/${userId}`,
-            {},
-            JSON.stringify({})
-          );
-        });
-      }
-    },
-    [stompClient]
-  );
-
-  const onError = useCallback((error) => {
-    console.error("WebSocket error:", error);
-  }, []);
-
-  const logout = useCallback(() => {
-    if (stompClient) {
-      stompClient.send(
-        "/app/user.disconnectUser",
-        {},
-        JSON.stringify({
-          nickName: user.nickname,
-          fullName: user.fullname,
-          status: "OFFLINE",
-        })
-      );
-      stompClient.disconnect();
-    }
-  }, [stompClient, user]);
-
-  return {
-    connectedUsers,
-    rooms,
-    messages: messages[selectedUserId] || messages[selectedRoomId] || [],
-    unreadMessages,
-    sendMessage,
-    logout,
-    selectUser,
-    selectRoom,
-    createRoom,
-    addParticipants,
-  };
+    return {
+        connectedUsers,
+        rooms,
+        messages: messages[selectedUserId] || messages[selectedRoomId] || [],
+        unreadMessages,
+        sendMessage,
+        logout,
+        selectUser,
+        selectRoom,
+        createRoom,
+        addParticipants,
+    };
 }
