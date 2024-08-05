@@ -238,29 +238,25 @@ body {
 
 .sender {
   background-color: #648decad;
-  /* Azul para mensajes enviados */
   color: #fff;
   align-self: flex-end;
 }
 
 .receiver {
   background-color: #262d31;
-  /* Gris oscuro para mensajes recibidos */
   color: #d1d1d1;
   align-self: flex-start;
 }
 
 .sender-name {
   font-size: 0.85em;
-  color: #7a7676dd;
-  /* Gris claro para nombre del remitente */
+  color: #d3d3d3dd;
   margin-bottom: 5px;
 }
 
 .timestamp {
   font-size: 0.75em;
   color: #b5b3b3;
-  /* Gris claro para el timestamp */
   position: absolute;
   bottom: 5px;
   right: 10px;
@@ -387,6 +383,10 @@ body {
 #addParticipantsForm {
   display: grid;
   place-items: center;
+}
+
+.usuarios {
+  border-bottom: 1px solid white;
 }
 
 .usuariosDisponibles {
