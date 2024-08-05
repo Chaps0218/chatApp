@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import SockJS from 'sockjs-client';
 import Stomp from 'stompjs';
+import ModalCrearGrupo from '../components/ModalCrearGrupo.JSX';
 
 const Chat = () => {
     const location = useLocation();
@@ -11,6 +12,7 @@ const Chat = () => {
     const [connectedUsers, setConnectedUsers] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [messages, setMessages] = useState([]);
+    const [isModalCrearOpen, setIsModalCrearOpen] = useState(false);
     const messageInputRef = useRef(null);
     const chatAreaRef = useRef(null);
     const ruta = "http://localhost:8080";
@@ -112,6 +114,12 @@ const Chat = () => {
 
     return (
         <div className="chat-container">
+            <ModalCrearGrupo 
+                    isOpen={isModalCrearOpen}
+                    onClose={handleCloseModal}
+                    onSubmit={handleSubmit}
+            />
+
             <div className="users-list">
                 <div className="users-list-container">
                     <h2>Online Users</h2>

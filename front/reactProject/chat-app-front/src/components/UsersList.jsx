@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useChat } from '../hooks/useChat';
+import { useModal } from '../context/ModalContext.jsx';
+import ModalCrearGrupo from './ModalCrearGrupo';
 
 function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onAddParticipants, currentUser, onLogout, unreadMessages }) {
     const [selectedUserId, setSelectedUserId] = useState(null);
@@ -9,6 +11,8 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
     const [selectedParticipants, setSelectedParticipants] = useState([]);
     const [showAddParticipants, setShowAddParticipants] = useState(false);
     const { logout, selectUser } = useChat(currentUser);
+    const { isModalOpen, openModal, closeModal } = useModal();
+    const [roomWithFormOpen, setRoomWithFormOpen] = useState(null);
 
     useEffect(() => {
         if (users.length > 0 && !selectedUserId && !selectedRoomId) {
@@ -30,10 +34,24 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
         onSelectRoom(room);
     };
 
-    const handleCreateRoom = (e) => {
-        e.preventDefault();
-        onCreateRoom(newRoomId);
-        setNewRoomId('');
+    const crearRoomModal = (roomId) => {
+        console.log("crearRoomModal called with roomId:", roomId);
+        console.log("onCreateRoom is:", onCreateRoom);
+        if (onCreateRoom && typeof onCreateRoom === 'function') {
+            onCreateRoom(roomId);
+            closeModal();
+        } else {
+            console.error("onCreateRoom is not defined or not a function");
+        }
+        console.log("Rendering UsersList, onCreateRoom is:", onCreateRoom);
+    };
+
+    const handleCreateRoom = (roomId) => {
+        if (onCreateRoom && typeof onCreateRoom === 'function') {
+            onCreateRoom(roomId);
+        } else {
+            console.error("onCreateRoom is not defined or not a function");
+        }
     };
 
     const handleAddParticipants = (e) => {
@@ -50,6 +68,20 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
                 ? prev.filter(id => id !== userId)
                 : [...prev, userId]
         );
+    };
+    const handleOpenModal = () => {
+        setIsModalCrearOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalCrearOpen(false);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // Aquí puedes manejar la lógica para crear el grupo
+        console.log('Formulario enviado');
+        handleCloseModal();
     };
 
     function salir() {
@@ -73,6 +105,7 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
                             {unreadMessages[user.nickName] > 0 && (
                                 <span className="new-message-icon"></span>
                             )}
+
                         </li>
                     ))}
                 </ul>
@@ -86,11 +119,40 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
                             onClick={() => handleRoomClick(room)}
                         >
                             {room.roomId}
+                            <button className='agregarparticipante'
+                                onClick={() => {
+                                    if (roomWithFormOpen === room.roomId) {
+                                        setRoomWithFormOpen(null); // Cierra el formulario si ya está abierto
+                                    } else {
+                                        setRoomWithFormOpen(room.roomId); // Abre el formulario para la habitación seleccionada
+                                    }
+                                    setRoomToAddParticipants(room.roomId);
+                                }}
+                            >
+                                {roomWithFormOpen === room.roomId ? 'Ocultar' : 'Agregar participantes'}
+                            </button>
+
+                            {roomWithFormOpen === room.roomId && (
+                                <form id="addParticipantsForm" onSubmit={handleAddParticipants}>
+                                    <ul id="availableUsersList">
+                                        {users.map((user) => (
+                                            <li
+                                                key={user.nickName}
+                                                className={`available-user ${selectedParticipants.includes(user.nickName) ? 'active' : ''}`}
+                                                onClick={() => toggleParticipant(user.nickName)}
+                                            >
+                                                {user.fullName}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <button type="submit">Agregar</button>
+                                </form>
+                            )}
+
                         </li>
                     ))}
                 </ul>
-
-                <h2>Create Room</h2>
+                {/* <hr></hr>
                 <form id="createRoomForm" onSubmit={handleCreateRoom}>
                     <input
                         type="text"
@@ -101,9 +163,9 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
                         required
                     />
                     <button type="submit">Create Room</button>
-                </form>
+                </form> */}
 
-                <h2>Add Participants</h2>
+                {/* <h2>Add Participants</h2>
                 <button onClick={() => setShowAddParticipants(!showAddParticipants)}>
                     {showAddParticipants ? 'Hide' : 'Show'} Add Participants Form
                 </button>
@@ -130,11 +192,18 @@ function UsersList({ users, rooms, onSelectUser, onSelectRoom, onCreateRoom, onA
                         </ul>
                         <button type="submit">Add Participants</button>
                     </form>
-                )}
+                )} */}
             </div>
-            <div className='logoutBox'>
-                <h2 id="connected-user-fullname">{currentUser.fullname}</h2>
-                <button className="logout" onClick={salir}>Logout</button>
+            <div>
+                <button className= 'boton-normal' onClick={openModal}> Crear grupo</button>
+                <ModalCrearGrupo
+                    isOpen={isModalOpen}
+                    onClose={closeModal}
+                    onCreateRoomModal={crearRoomModal}
+                />
+                <p id="connected-user-fullname">{currentUser.fullname}</p>
+                <a className="logout" href="#" onClick={salir}>Cerrar sesión</a>
+
             </div>
         </div>
     );

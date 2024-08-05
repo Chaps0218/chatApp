@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import UserForm from './components/UserForm';
 import ChatRoom from './components/ChatRoom';
+import { useModal } from './context/ModalContext';
+import ModalCrearGrupo from './components/ModalCrearGrupo';
 
 function App() {
   const [user, setUser] = useState(null);
+  const { isModalOpen, openModal, closeModal } = useModal();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -17,6 +20,12 @@ function App() {
     setUser(null);
   };
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Lógica para crear el grupo
+    console.log('Formulario enviado');
+    closeModal();
+};
 
   return (
     <div>
@@ -24,7 +33,10 @@ function App() {
       {!user ? (
         <UserForm onConnect={setUser} />
       ) : (
-        <ChatRoom user={user} onLogout={handleLogout} />
+        <div>
+          <ChatRoom user={user} onLogout={() => setUser(null)} />
+          
+        </div>
       )}
     </div>
   );
